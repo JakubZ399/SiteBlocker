@@ -9,6 +9,8 @@
 
     <ItemGroup>
       <ProjectReference Include="..\SiteBlocker.Core\SiteBlocker.Core.csproj" />
+      <ProjectReference Include="..\SiteBlocker.Guardian\SiteBlocker.Guardian.csproj" />
+      <ProjectReference Include="..\SiteBlocker.Service\SiteBlocker.Service.csproj" />
     </ItemGroup>
 
 </Project>
