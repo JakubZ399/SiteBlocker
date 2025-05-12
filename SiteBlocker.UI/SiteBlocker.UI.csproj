@@ -6,6 +6,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UseWPF>true</UseWPF>
+        <EnableDefaultPageItems>false</EnableDefaultPageItems>
     </PropertyGroup>
 
     <ItemGroup>
@@ -13,13 +14,14 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="MaterialDesignColors" Version="5.2.1" />
-      <PackageReference Include="MaterialDesignThemes" Version="5.2.1" />
+        <Page Include="MainWindow.xaml">
+            <Generator>MSBuild:Compile</Generator>
+        </Page>
     </ItemGroup>
 
     <ItemGroup>
-      <Page Remove="MainWindow.xaml" />
-      <Resource Include="MainWindow.xaml" />
+      <PackageReference Include="MaterialDesignColors" Version="2.1.4" />
+      <PackageReference Include="MaterialDesignThemes" Version="4.9.0" />
     </ItemGroup>
 
 </Project>

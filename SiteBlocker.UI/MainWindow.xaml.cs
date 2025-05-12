@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -11,39 +10,39 @@ namespace SiteBlocker.UI
     public partial class MainWindow : Window, IDisposable
     {
         private readonly SiteBlocker.Core.SiteBlocker _blocker = new SiteBlocker.Core.SiteBlocker();
-        private BlockerConfig _config;
+        private BlockerConfig _config = null!; // Using null forgiving operator
         private readonly string _configPath;
         private readonly DispatcherTimer _timer = new DispatcherTimer();
         private bool _isBlockingActive = false;
         private readonly ObservableCollection<string> _blockedSites = new ObservableCollection<string>();
-        private ObservableCollection<ScheduleItem> _scheduleItems = new ObservableCollection<ScheduleItem>();
+        private readonly ObservableCollection<ScheduleItem> _scheduleItems = new ObservableCollection<ScheduleItem>();
 
         public MainWindow()
         {
-            InitializeComponent();
+            InitializeComponent(); // This will be generated from XAML
 
-            // Ścieżka do pliku konfiguracyjnego
+            // Path to configuration file
             _configPath = BlockerConfig.DefaultConfigPath;
 
-            // Załaduj konfigurację
+            // Load configuration
             LoadConfig();
             
             InitializeScheduleComponents();
 
-            // Ustaw timer do aktualizacji informacji o pozostałym czasie
+            // Set timer to update remaining time information
             _timer.Interval = TimeSpan.FromSeconds(1);
             _timer.Tick += Timer_Tick;
 
-            // Ustaw źródło danych dla listy zablokowanych stron
+            // Set data source for blocked sites list
             BlockedSitesListBox.ItemsSource = _blockedSites;
 
-            // Sprawdź, czy aplikacja działa z uprawnieniami administratora
+            // Check if the application is running with administrator privileges
             if (!AdminHelper.IsRunningAsAdmin())
             {
                 MessageBoxResult result = MessageBox.Show(
-                    "Aplikacja wymaga uprawnień administratora do modyfikacji pliku hosts. " +
-                    "Czy chcesz uruchomić aplikację ponownie z uprawnieniami administratora?",
-                    "Wymagane uprawnienia administratora",
+                    "The application requires administrator privileges to modify the hosts file. " +
+                    "Do you want to restart the application with administrator privileges?",
+                    "Administrator privileges required",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
 
@@ -55,8 +54,8 @@ namespace SiteBlocker.UI
                 else
                 {
                     MessageBox.Show(
-                        "Aplikacja może nie działać poprawnie bez uprawnień administratora.",
-                        "Ostrzeżenie",
+                        "The application may not work properly without administrator privileges.",
+                        "Warning",
                         MessageBoxButton.OK,
                         MessageBoxImage.Warning);
                 }
@@ -69,25 +68,25 @@ namespace SiteBlocker.UI
             {
                 _config = BlockerConfig.LoadFromFile(_configPath);
                 
-                // Wypełnij listę zablokowanych stron
+                // Fill list of blocked sites
                 _blockedSites.Clear();
                 foreach (string site in _config.BlockedSites)
                 {
                     _blockedSites.Add(site);
                 }
                 
-                // Zaktualizuj informacje o statusie
+                // Update status information
                 UpdateStatusInfo();
             }
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    $"Błąd podczas ładowania konfiguracji: {ex.Message}",
-                    "Błąd",
+                    $"Error loading configuration: {ex.Message}",
+                    "Error",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
                 
-                // Utwórz nową konfigurację
+                // Create new configuration
                 _config = new BlockerConfig();
             }
         }
@@ -96,14 +95,14 @@ namespace SiteBlocker.UI
         {
             try
             {
-                // Zapisz konfigurację do pliku
+                // Save configuration to file
                 _config.SaveToFile(_configPath);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    $"Błąd podczas zapisywania konfiguracji: {ex.Message}",
-                    "Błąd",
+                    $"Error saving configuration: {ex.Message}",
+                    "Error",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
             }
@@ -111,27 +110,27 @@ namespace SiteBlocker.UI
 
         private void UpdateStatusInfo()
         {
-            // Zaktualizuj informację o statusie blokowania
+            // Update blocking status information
             if (_config.IsEmergencyModeEnabled)
             {
-                StatusTextBlock.Text = "Status: TRYB AWARYJNY";
-                TimeRemainingTextBlock.Text = "Czas pozostały: Blokada wyłączona";
+                StatusTextBlock.Text = "Status: EMERGENCY MODE";
+                TimeRemainingTextBlock.Text = "Time remaining: Blocking disabled";
                 _isBlockingActive = false;
                 _timer.Stop();
             }
             else if (!_config.IsActive)
             {
-                StatusTextBlock.Text = "Status: Blokowanie wyłączone";
-                TimeRemainingTextBlock.Text = "Czas pozostały: -";
+                StatusTextBlock.Text = "Status: Blocking disabled";
+                TimeRemainingTextBlock.Text = "Time remaining: -";
                 _isBlockingActive = false;
                 _timer.Stop();
             }
             else
             {
-                StatusTextBlock.Text = "Status: Blokowanie aktywne";
+                StatusTextBlock.Text = "Status: Blocking active";
                 _isBlockingActive = true;
                 
-                // Zaktualizuj informację o pozostałym czasie
+                // Update information about remaining time
                 if (_config.BlockingStartTime.HasValue)
                 {
                     TimeSpan elapsed = DateTime.Now - _config.BlockingStartTime.Value;
@@ -139,12 +138,12 @@ namespace SiteBlocker.UI
                     
                     if (remaining.TotalSeconds <= 0)
                     {
-                        // Czas blokady minął - wyłącz blokowanie
+                        // Blocking time has elapsed - disable blocking
                         StopBlocking();
                     }
                     else
                     {
-                        TimeRemainingTextBlock.Text = $"Czas pozostały: {remaining:mm\\:ss}";
+                        TimeRemainingTextBlock.Text = $"Time remaining: {remaining:mm\\:ss}";
                         if (!_timer.IsEnabled)
                         {
                             _timer.Start();
@@ -156,7 +155,7 @@ namespace SiteBlocker.UI
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            // Aktualizuj informację o statusie
+            // Update status information
             UpdateStatusInfo();
         }
 
@@ -167,28 +166,28 @@ namespace SiteBlocker.UI
             if (string.IsNullOrEmpty(site))
             {
                 MessageBox.Show(
-                    "Proszę wpisać domenę do zablokowania.",
-                    "Puste pole",
+                    "Please enter a domain to block.",
+                    "Empty field",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
                 return;
             }
             
-            // Dodaj stronę do listy, jeśli jeszcze nie istnieje
+            // Add site to the list if it doesn't already exist
             if (!_blockedSites.Contains(site))
             {
                 _blockedSites.Add(site);
                 _config.BlockedSites.Add(site);
                 SaveConfig();
                 
-                // Jeśli blokowanie jest aktywne, zastosuj zmiany
+                // If blocking is active, apply changes
                 if (_isBlockingActive)
                 {
                     _blocker.BlockSites(_config.BlockedSites);
                 }
             }
             
-            // Wyczyść pole tekstowe
+            // Clear text field
             SiteTextBox.Text = "";
         }
 
@@ -196,12 +195,12 @@ namespace SiteBlocker.UI
         {
             if (sender is System.Windows.Controls.Button button && button.Tag is string site)
             {
-                // Usuń stronę z listy
+                // Remove site from the list
                 _blockedSites.Remove(site);
                 _config.BlockedSites.Remove(site);
                 SaveConfig();
                 
-                // Jeśli blokowanie jest aktywne, zastosuj zmiany
+                // If blocking is active, apply changes
                 if (_isBlockingActive)
                 {
                     if (_config.BlockedSites.Count > 0)
@@ -221,8 +220,8 @@ namespace SiteBlocker.UI
             if (_blockedSites.Count == 0)
             {
                 MessageBox.Show(
-                    "Proszę dodać co najmniej jedną stronę do zablokowania.",
-                    "Pusta lista",
+                    "Please add at least one site to block.",
+                    "Empty list",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
                 return;
@@ -232,60 +231,55 @@ namespace SiteBlocker.UI
             _blocker.UseFirewall = FirewallCheckBox.IsChecked ?? true;
             _blocker.UseWfp = WfpCheckBox.IsChecked ?? false;
             
-            // Włącz blokowanie
+            // Enable blocking
             _config.EnableBlocking();
             SaveConfig();
             
-            // Zastosuj blokadę
+            // Apply block
             _blocker.BlockSites(_config.BlockedSites);
             
-            // Zaktualizuj informacje o statusie
+            // Update status information
             UpdateStatusInfo();
             
             MessageBox.Show(
-                $"Blokowanie zostało włączone na maksymalnie {_config.MaxBlockingDuration.TotalMinutes} minut.\n\n" +
-                "Wskazówki dla skutecznego blokowania:\n" +
-                "1. Zamknij wszystkie okna przeglądarki\n" +
-                "2. Wyczyść pamięć podręczną przeglądarki\n" +
-                "3. Uruchom przeglądarkę ponownie\n\n" +
-                "Niektóre przeglądarki (szczególnie Chrome) mogą przechowywać własną pamięć DNS.",
-                "Blokowanie włączone",
+                $"Blocking has been enabled for a maximum of {_config.MaxBlockingDuration.TotalMinutes} minutes.\n\n" +
+                "Tips for effective blocking:\n" +
+                "1. Close all browser windows\n" +
+                "2. Clear browser cache\n" +
+                "3. Restart browser\n\n" +
+                "Some browsers (especially Chrome) may maintain their own DNS cache.",
+                "Blocking enabled",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
         
         private void InitializeScheduleComponents()
         {
-            // Ustaw źródło danych dla listy harmonogramu
+            // Set data source for schedule list
             ScheduleListBox.ItemsSource = _scheduleItems;
     
-            // Wypełnij combo boxy dla dni i godzin
+            // Fill combo boxes for days and hours
             DayComboBox.ItemsSource = Enum.GetValues(typeof(DayOfWeek));
             DayComboBox.SelectedIndex = 0;
     
-            // Wypełnij combo boxy godzin i minut
+            // Fill hour and minute combo boxes
             for (int i = 0; i < 24; i++)
             {
                 StartHourComboBox.Items.Add(i.ToString("00"));
                 EndHourComboBox.Items.Add(i.ToString("00"));
             }
-            StartHourComboBox.SelectedIndex = 9; // Domyślnie 9:00
-            EndHourComboBox.SelectedIndex = 17; // Domyślnie 17:00
+            StartHourComboBox.SelectedIndex = 9; // Default 9:00
+            EndHourComboBox.SelectedIndex = 17; // Default 17:00
     
             for (int i = 0; i < 60; i += 15)
             {
                 StartMinuteComboBox.Items.Add(i.ToString("00"));
                 EndMinuteComboBox.Items.Add(i.ToString("00"));
             }
-            StartMinuteComboBox.SelectedIndex = 0; // 00 minut
-            EndMinuteComboBox.SelectedIndex = 0; // 00 minut
+            StartMinuteComboBox.SelectedIndex = 0; // 00 minutes
+            EndMinuteComboBox.SelectedIndex = 0; // 00 minutes
     
-            // Wypełnij listę elementów harmonogramu z konfiguracji
-            foreach (var item in _config.BlockingSchedule)
-            {
-                _scheduleItems.Add(item);
-            }
-            
+            // Fill schedule items list from configuration
             if (_config != null && _config.BlockingSchedule != null)
             {
                 foreach (var item in _config.BlockingSchedule)
@@ -302,42 +296,41 @@ namespace SiteBlocker.UI
 
         private void EmergencyButton_Click(object sender, RoutedEventArgs e)
         {
-            // Włącz tryb awaryjny i usuń blokady
+            // Enable emergency mode and remove blocks
             _config.EnableEmergencyMode();
             _blocker.UnblockSites();
-            _blocker.EmergencyRestore(); // Dodaj tę metodę do klasy SiteBlocker
+            _blocker.EmergencyRestore(); 
             SaveConfig();
             
-            // Zaktualizuj informacje o statusie
+            // Update status information
             UpdateStatusInfo();
             
             MessageBox.Show(
-                "TRYB AWARYJNY został aktywowany. Wszystkie blokady zostały usunięte.",
-                "Tryb awaryjny",
+                "EMERGENCY MODE has been activated. All blocks have been removed.",
+                "Emergency mode",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
 
         private void StopBlocking()
         {
-            // Wyłącz blokowanie
+            // Disable blocking
             _config.DisableBlocking();
             SaveConfig();
             
-            // Usuń blokadę
+            // Remove block
             _blocker.UnblockSites();
             
-            // Zaktualizuj informacje o statusie
+            // Update status information
             UpdateStatusInfo();
             
             MessageBox.Show(
-                "Blokowanie zostało wyłączone.",
-                "Blokowanie wyłączone",
+                "Blocking has been disabled.",
+                "Blocking disabled",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
         
-        // Add this method at the end of the class
         public void Dispose()
         {
             _blocker?.Dispose();
@@ -347,15 +340,15 @@ namespace SiteBlocker.UI
         {
             base.OnClosed(e);
             
-            // Zatrzymaj timer
+            // Stop timer
             _timer.Stop();
             
-            // Zapytaj, czy wyłączyć blokowanie przy zamykaniu aplikacji
+            // Ask whether to disable blocking when closing the application
             if (_isBlockingActive)
             {
                 MessageBoxResult result = MessageBox.Show(
-                    "Czy chcesz wyłączyć blokowanie przed zamknięciem aplikacji?",
-                    "Blokowanie aktywne",
+                    "Do you want to disable blocking before closing the application?",
+                    "Blocking active",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Question);
                 
@@ -370,37 +363,50 @@ namespace SiteBlocker.UI
         
         private void AddScheduleButton_Click(object sender, RoutedEventArgs e)
         {
-            // Pobierz wybrane wartości
-            DayOfWeek day = (DayOfWeek)DayComboBox.SelectedItem;
-            int startHour = int.Parse(StartHourComboBox.SelectedItem.ToString());
-            int startMinute = int.Parse(StartMinuteComboBox.SelectedItem.ToString());
-            int endHour = int.Parse(EndHourComboBox.SelectedItem.ToString());
-            int endMinute = int.Parse(EndMinuteComboBox.SelectedItem.ToString());
-    
-            // Sprawdź poprawność danych
-            if (endHour < startHour || (endHour == startHour && endMinute <= startMinute))
+            try
+            {
+                // Get selected values
+                DayOfWeek day = (DayOfWeek)DayComboBox.SelectedItem;
+                int startHour = int.Parse(StartHourComboBox.SelectedItem.ToString());
+                int startMinute = int.Parse(StartMinuteComboBox.SelectedItem.ToString());
+                int endHour = int.Parse(EndHourComboBox.SelectedItem.ToString());
+                int endMinute = int.Parse(EndMinuteComboBox.SelectedItem.ToString());
+        
+                // Check data validity
+                if (endHour < startHour || (endHour == startHour && endMinute <= startMinute))
+                {
+                    MessageBox.Show(
+                        "End time must be later than start time.",
+                        "Invalid time range",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    return;
+                }
+        
+                // Create new schedule item
+                ScheduleItem item = new ScheduleItem
+                {
+                    Day = day,
+                    StartTime = new TimeSpan(startHour, startMinute, 0),
+                    EndTime = new TimeSpan(endHour, endMinute, 0),
+                    IsEnabled = true
+                };
+        
+                // Add to collection
+                _scheduleItems.Add(item);
+                _config.BlockingSchedule.Add(item);
+                SaveConfig();
+
+                MessageBox.Show("Schedule added successfully!", "Schedule", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
             {
                 MessageBox.Show(
-                    "Czas zakończenia musi być późniejszy niż czas rozpoczęcia.",
-                    "Nieprawidłowy zakres czasu",
+                    $"Error adding schedule: {ex.Message}",
+                    "Error",
                     MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-                return;
+                    MessageBoxImage.Error);
             }
-    
-            // Utwórz nowy element harmonogramu
-            ScheduleItem item = new ScheduleItem
-            {
-                Day = day,
-                StartTime = new TimeSpan(startHour, startMinute, 0),
-                EndTime = new TimeSpan(endHour, endMinute, 0),
-                IsEnabled = true
-            };
-    
-            // Dodaj do kolekcji
-            _scheduleItems.Add(item);
-            _config.BlockingSchedule.Add(item);
-            SaveConfig();
         }
 
         private void RemoveScheduleButton_Click(object sender, RoutedEventArgs e)
@@ -415,13 +421,12 @@ namespace SiteBlocker.UI
 
         private void ScheduleCheckBox_Click(object sender, RoutedEventArgs e)
         {
-            SaveConfig(); // Zapisz stan po zmianie aktywności elementu harmonogramu
+            SaveConfig(); // Save state after changing schedule item activity
         }
 
         private void UseScheduleCheckBox_Click(object sender, RoutedEventArgs e)
         {
-            // Ustaw flagę używania harmonogramu w konfiguracji
-            // Możesz dodać tę flagę do klasy BlockerConfig
+            // Set schedule usage flag in configuration
             SaveConfig();
         }
     }
