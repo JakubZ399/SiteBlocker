@@ -235,7 +235,12 @@ namespace SiteBlocker.UI
             UpdateStatusInfo();
             
             MessageBox.Show(
-                $"Blokowanie zostało włączone na maksymalnie {_config.MaxBlockingDuration.TotalMinutes} minut.",
+                $"Blokowanie zostało włączone na maksymalnie {_config.MaxBlockingDuration.TotalMinutes} minut.\n\n" +
+                "Wskazówki dla skutecznego blokowania:\n" +
+                "1. Zamknij wszystkie okna przeglądarki\n" +
+                "2. Wyczyść pamięć podręczną przeglądarki\n" +
+                "3. Uruchom przeglądarkę ponownie\n\n" +
+                "Niektóre przeglądarki (szczególnie Chrome) mogą przechowywać własną pamięć DNS.",
                 "Blokowanie włączone",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
