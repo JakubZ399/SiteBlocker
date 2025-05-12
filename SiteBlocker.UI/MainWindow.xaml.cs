@@ -291,6 +291,12 @@ namespace SiteBlocker.UI
 
         private void StopBlockingButton_Click(object sender, RoutedEventArgs e)
         {
+            if (!VerifyPasswordBeforeAction("stop blocking"))
+            {
+                MessageBox.Show("Incorrect password", "Access Denied", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+    
             StopBlocking();
         }
 
@@ -428,6 +434,20 @@ namespace SiteBlocker.UI
         {
             // Set schedule usage flag in configuration
             SaveConfig();
+        }
+        
+        private bool VerifyPasswordBeforeAction(string actionName)
+        {
+            if (string.IsNullOrEmpty(_config.PasswordHash))
+                return true;
+        
+            // Show password dialog
+            var passwordDialog = new PasswordDialog($"Enter password to {actionName}");
+            if (passwordDialog.ShowDialog() == true)
+            {
+                return _config.VerifyPassword(passwordDialog.Password);
+            }
+            return false;
         }
     }
 }

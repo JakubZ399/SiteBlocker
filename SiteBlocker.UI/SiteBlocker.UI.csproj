@@ -17,6 +17,7 @@
         <Page Include="MainWindow.xaml">
             <Generator>MSBuild:Compile</Generator>
         </Page>
+        <Page Include="PasswordDialog.xaml" />
     </ItemGroup>
 
     <ItemGroup>
