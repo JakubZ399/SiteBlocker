@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Threading;
 using WinDivertSharp;
 
@@ -195,105 +196,112 @@ public class WfpBlocker : IDisposable
         }
     }
     
-    private void ProcessPackets()
+private void ProcessPackets()
+{
+    try
     {
-        try
+        // Filtruj pakiety TCP dla ruchu HTTP/HTTPS
+        string filter = "tcp and (tcp.DstPort == 80 or tcp.DstPort == 443)";
+        _divertHandle = WinDivert.WinDivertOpen(filter, WinDivertLayer.Network, 0, WinDivertOpenFlags.None);
+        
+        if (_divertHandle == IntPtr.Zero)
         {
-            // Open a WinDivert handle for TCP traffic
-            string filter = "tcp";
-            _divertHandle = WinDivert.WinDivertOpen(filter, WinDivertLayer.Network, 0, WinDivertOpenFlags.None);
-            
-            if (_divertHandle == IntPtr.Zero)
+            throw new Exception("Failed to open WinDivert handle");
+        }
+        
+        Logger.Log("WFP: Packet interception started successfully");
+        
+        // Utwórz obiekt WinDivertBuffer
+        WinDivertBuffer packetBuffer = new WinDivertBuffer();
+        
+        while (_isRunning)
+        {
+            try
             {
-                throw new Exception("Failed to open WinDivert handle");
-            }
-            
-            Logger.Log("WFP: Packet interception started successfully");
-            
-            // Create a WinDivertBuffer instead of byte array
-            WinDivertBuffer packetBuffer = new WinDivertBuffer();
-            
-            // Process packets until stopped
-            while (_isRunning)
-            {
-                try
+                uint readLength = 0;
+                WinDivertAddress addr = new WinDivertAddress();
+                
+                // Odbierz pakiet
+                if (!WinDivert.WinDivertRecv(_divertHandle, packetBuffer, ref addr, ref readLength))
                 {
-                    uint readLength = 0;
-                    WinDivertAddress addr = new WinDivertAddress();
+                    Thread.Sleep(10);
+                    continue;
+                }
+                
+                // Analizuj pakiet tylko jeśli jest dostatecznie duży
+                if (readLength < 40) // Minimum dla nagłówka IPv4 + TCP
+                {
+                    WinDivert.WinDivertSend(_divertHandle, packetBuffer, readLength, ref addr);
+                    continue;
+                }
+                
+                // Kopiuj dane z bufora WinDivert do tablicy bajtów dla analizy
+                byte[] packetData = new byte[readLength];
+                
+                for (int i = 0; i < readLength; i++)
+                {
+                    packetData[i] = packetBuffer[i];
+                }
+                
+                // Proste wyodrębnianie adresów IP z pakietu
+                string? srcIp = null;
+                string? dstIp = null;
+                
+                // Sprawdź wersję protokołu IP
+                byte ipVersion = (byte)((packetData[0] & 0xF0) >> 4);
+                
+                if (ipVersion == 4) // IPv4
+                {
+                    // Adresy IPv4 znajdują się w określonych miejscach w nagłówku
+                    srcIp = $"{packetData[12]}.{packetData[13]}.{packetData[14]}.{packetData[15]}";
+                    dstIp = $"{packetData[16]}.{packetData[17]}.{packetData[18]}.{packetData[19]}";
                     
-                    // Use the WinDivertBuffer with WinDivertRecv
-                    if (!WinDivert.WinDivertRecv(_divertHandle, packetBuffer, ref addr, ref readLength))
+                    Logger.Log($"WFP: Detected IPv4 packet from {srcIp} to {dstIp}");
+                }
+                
+                // Sprawdź czy któryś z adresów IP jest na liście blokowanych
+                bool shouldBlock = false;
+                
+                lock (_lockObj)
+                {
+                    if ((srcIp != null && _blockedIPs.Contains(srcIp)) || 
+                        (dstIp != null && _blockedIPs.Contains(dstIp)))
                     {
-                        continue; // No packet received or error
-                    }
-                    
-                    // Extract the raw packet data for examination
-                    byte[] packetData = new byte[readLength];
-                    Buffer.BlockCopy(packetBuffer.Buffer, 0, packetData, 0, (int)readLength);
-                    // Instead of using Buffer.BlockCopy, use the packet data directly
-                    // Most implementations of WinDivertSharp allow accessing the buffer
-                    // through the packet data GetBytes method or similar
-                    
-                    // Simple IP extraction for filtering
-                    string? srcIp = null;
-                    string? dstIp = null;
-                    
-                    // Extract IP addresses from packet (simplified)
-                    if (readLength > 20) // Minimum IPv4 header size
-                    {
-                        // Check if it's an IPv4 packet (version field = 4)
-                        if ((packetData[0] & 0xF0) == 0x40)
-                        {
-                            // Source IP is at offset 12-15
-                            srcIp = $"{packetData[12]}.{packetData[13]}.{packetData[14]}.{packetData[15]}";
-                            
-                            // Destination IP is at offset 16-19
-                            dstIp = $"{packetData[16]}.{packetData[17]}.{packetData[18]}.{packetData[19]}";
-                        }
-                    }
-                    
-                    // Check if the packet should be blocked
-                    bool shouldBlock = false;
-                    
-                    lock (_lockObj)
-                    {
-                        if ((srcIp != null && _blockedIPs.Contains(srcIp)) || 
-                            (dstIp != null && _blockedIPs.Contains(dstIp)))
-                        {
-                            shouldBlock = true;
-                        }
-                    }
-                    
-                    // If the packet should not be blocked, reinject it
-                    if (!shouldBlock)
-                    {
-                        WinDivert.WinDivertSend(_divertHandle, packetBuffer, readLength, ref addr);
+                        shouldBlock = true;
+                        Logger.Log($"WFP: Blocking packet between {srcIp} and {dstIp}");
                     }
                 }
-                catch (Exception ex)
+                
+                // Jeśli pakiet nie powinien być zablokowany, przekaż go dalej
+                if (!shouldBlock)
                 {
-                    if (_isRunning)
-                    {
-                        Logger.Log($"WFP: Error processing packet: {ex.Message}");
-                        Thread.Sleep(100); // Prevent tight loop on errors
-                    }
+                    WinDivert.WinDivertSend(_divertHandle, packetBuffer, readLength, ref addr);
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            Logger.Log($"WFP: Critical error in packet processing thread: {ex.Message}\n{ex.StackTrace}");
-        }
-        finally
-        {
-            if (_divertHandle != IntPtr.Zero)
+            catch (Exception ex)
             {
-                WinDivert.WinDivertClose(_divertHandle);
-                _divertHandle = IntPtr.Zero;
+                if (_isRunning)
+                {
+                    Logger.Log($"WFP: Error processing packet: {ex.Message}");
+                    Thread.Sleep(100);
+                }
             }
-            Logger.Log("WFP: Packet interception stopped");
         }
     }
+    catch (Exception ex)
+    {
+        Logger.Log($"WFP: Critical error in packet processing thread: {ex.Message}\n{ex.StackTrace}");
+    }
+    finally
+    {
+        if (_divertHandle != IntPtr.Zero)
+        {
+            WinDivert.WinDivertClose(_divertHandle);
+            _divertHandle = IntPtr.Zero;
+        }
+        Logger.Log("WFP: Packet interception stopped");
+    }
+}
     
     private string CleanDomainName(string domain)
     {

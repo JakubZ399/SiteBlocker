@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SiteBlocker.UI", "SiteBlock
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SiteBlocker.Guardian", "SiteBlocker.Guardian\SiteBlocker.Guardian.csproj", "{11611A2E-5DBD-46ED-AD6D-60DD13376881}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SiteBlocker.Installer", "SiteBlocker.Installer\SiteBlocker.Installer.csproj", "{B9C92273-2CD3-49B7-8DBD-030A71C36612}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{11611A2E-5DBD-46ED-AD6D-60DD13376881}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{11611A2E-5DBD-46ED-AD6D-60DD13376881}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{11611A2E-5DBD-46ED-AD6D-60DD13376881}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9C92273-2CD3-49B7-8DBD-030A71C36612}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9C92273-2CD3-49B7-8DBD-030A71C36612}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9C92273-2CD3-49B7-8DBD-030A71C36612}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9C92273-2CD3-49B7-8DBD-030A71C36612}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
