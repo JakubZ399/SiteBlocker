@@ -3,10 +3,72 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:SiteBlocker.UI"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="SiteBlocker - Tryb testowy" Height="450" Width="600">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
+        <!-- Nagłówek -->
+        <TextBlock Grid.Row="0" Text="SiteBlocker - Tryb testowy (maksymalnie 5 minut)" 
+                   FontSize="20" FontWeight="Bold" Margin="0,0,0,20"/>
+
+        <!-- Dodawanie stron do zablokowania -->
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="SiteTextBox" Grid.Column="0" Margin="0,0,10,0" 
+                     ToolTip="Wpisz domenę do zablokowania (np. facebook.com)"/>
+            <Button x:Name="AddSiteButton" Grid.Column="1" Content="Dodaj stronę" 
+                    Padding="10,5" Click="AddSiteButton_Click"/>
+        </Grid>
+
+        <!-- Lista zablokowanych stron -->
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Text="Zablokowane strony:" FontWeight="Bold" Margin="0,0,0,5"/>
+            <ListBox x:Name="BlockedSitesListBox" Grid.Row="1" Margin="0,0,0,10">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding}"/>
+                            <Button Grid.Column="1" Content="Usuń" Margin="5,0,0,0"
+                                    Click="RemoveSiteButton_Click" Tag="{Binding}"/>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+
+        <!-- Przyciski kontrolne -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,10,0,0">
+            <Button x:Name="StartBlockingButton" Content="Rozpocznij blokowanie" 
+                    Padding="15,8" Margin="0,0,10,0" Click="StartBlockingButton_Click"/>
+            <Button x:Name="StopBlockingButton" Content="Zatrzymaj blokowanie" 
+                    Padding="15,8" Margin="0,0,10,0" Click="StopBlockingButton_Click"/>
+            <Button x:Name="EmergencyButton" Content="TRYB AWARYJNY" 
+                    Padding="15,8" Background="Red" Foreground="White" 
+                    Click="EmergencyButton_Click"/>
+        </StackPanel>
+
+        <!-- Status blokowania -->
+        <StackPanel Grid.Row="4" Margin="0,20,0,0">
+            <TextBlock x:Name="StatusTextBlock" Text="Status: Blokowanie wyłączone" FontWeight="Bold"/>
+            <TextBlock x:Name="TimeRemainingTextBlock" Text="Czas pozostały: -" Margin="0,5,0,0"/>
+        </StackPanel>
     </Grid>
 </Window>
