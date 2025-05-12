@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using SiteBlocker.Core;
 
@@ -15,10 +16,12 @@ namespace SiteBlocker.UI
         private readonly DispatcherTimer _timer = new DispatcherTimer();
         private bool _isBlockingActive = false;
         private readonly ObservableCollection<string> _blockedSites = new ObservableCollection<string>();
+        private ObservableCollection<ScheduleItem> _scheduleItems = new ObservableCollection<ScheduleItem>();
 
         public MainWindow()
         {
             InitializeComponent();
+            InitializeScheduleComponents();
 
             // Ścieżka do pliku konfiguracyjnego
             _configPath = BlockerConfig.DefaultConfigPath;
@@ -249,6 +252,39 @@ namespace SiteBlocker.UI
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
+        
+        private void InitializeScheduleComponents()
+        {
+            // Ustaw źródło danych dla listy harmonogramu
+            ScheduleListBox.ItemsSource = _scheduleItems;
+    
+            // Wypełnij combo boxy dla dni i godzin
+            DayComboBox.ItemsSource = Enum.GetValues(typeof(DayOfWeek));
+            DayComboBox.SelectedIndex = 0;
+    
+            // Wypełnij combo boxy godzin i minut
+            for (int i = 0; i < 24; i++)
+            {
+                StartHourComboBox.Items.Add(i.ToString("00"));
+                EndHourComboBox.Items.Add(i.ToString("00"));
+            }
+            StartHourComboBox.SelectedIndex = 9; // Domyślnie 9:00
+            EndHourComboBox.SelectedIndex = 17; // Domyślnie 17:00
+    
+            for (int i = 0; i < 60; i += 15)
+            {
+                StartMinuteComboBox.Items.Add(i.ToString("00"));
+                EndMinuteComboBox.Items.Add(i.ToString("00"));
+            }
+            StartMinuteComboBox.SelectedIndex = 0; // 00 minut
+            EndMinuteComboBox.SelectedIndex = 0; // 00 minut
+    
+            // Wypełnij listę elementów harmonogramu z konfiguracji
+            foreach (var item in _config.BlockingSchedule)
+            {
+                _scheduleItems.Add(item);
+            }
+        }
 
         private void StopBlockingButton_Click(object sender, RoutedEventArgs e)
         {
@@ -323,6 +359,61 @@ namespace SiteBlocker.UI
             Dispose();
         }
         
-        
+        private void AddScheduleButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Pobierz wybrane wartości
+            DayOfWeek day = (DayOfWeek)DayComboBox.SelectedItem;
+            int startHour = int.Parse(StartHourComboBox.SelectedItem.ToString());
+            int startMinute = int.Parse(StartMinuteComboBox.SelectedItem.ToString());
+            int endHour = int.Parse(EndHourComboBox.SelectedItem.ToString());
+            int endMinute = int.Parse(EndMinuteComboBox.SelectedItem.ToString());
+    
+            // Sprawdź poprawność danych
+            if (endHour < startHour || (endHour == startHour && endMinute <= startMinute))
+            {
+                MessageBox.Show(
+                    "Czas zakończenia musi być późniejszy niż czas rozpoczęcia.",
+                    "Nieprawidłowy zakres czasu",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+    
+            // Utwórz nowy element harmonogramu
+            ScheduleItem item = new ScheduleItem
+            {
+                Day = day,
+                StartTime = new TimeSpan(startHour, startMinute, 0),
+                EndTime = new TimeSpan(endHour, endMinute, 0),
+                IsEnabled = true
+            };
+    
+            // Dodaj do kolekcji
+            _scheduleItems.Add(item);
+            _config.BlockingSchedule.Add(item);
+            SaveConfig();
+        }
+
+        private void RemoveScheduleButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is ScheduleItem item)
+            {
+                _scheduleItems.Remove(item);
+                _config.BlockingSchedule.Remove(item);
+                SaveConfig();
+            }
+        }
+
+        private void ScheduleCheckBox_Click(object sender, RoutedEventArgs e)
+        {
+            SaveConfig(); // Zapisz stan po zmianie aktywności elementu harmonogramu
+        }
+
+        private void UseScheduleCheckBox_Click(object sender, RoutedEventArgs e)
+        {
+            // Ustaw flagę używania harmonogramu w konfiguracji
+            // Możesz dodać tę flagę do klasy BlockerConfig
+            SaveConfig();
+        }
     }
 }

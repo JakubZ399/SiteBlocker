@@ -10,6 +10,7 @@ public class SiteBlocker : IDisposable
 {
     private readonly FirewallBlocker _firewallBlocker = new FirewallBlocker();
     private readonly WfpBlocker _wfpBlocker = new WfpBlocker();
+    private readonly List<FileStream> _lockedFiles = new List<FileStream>();
     private readonly string _hostsPath = @"C:\Windows\System32\drivers\etc\hosts";
 
     private const string MARKER_START = "# BEGIN SITE_BLOCKER";
@@ -359,5 +360,36 @@ public class SiteBlocker : IDisposable
     public void Dispose()
     {
         _wfpBlocker.Dispose();
+    }
+    
+    public void PreventUninstall()
+    {
+        try
+        {
+            // Pobierz katalog aplikacji
+            string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        
+            // Znajdź pliki wykonywalne aplikacji
+            string[] exeFiles = Directory.GetFiles(appDirectory, "*.exe");
+        
+            foreach (string file in exeFiles)
+            {
+                try
+                {
+                    // Otwórz plik z ekskluzywnym dostępem, aby zapobiec jego usunięciu
+                    FileStream fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    _lockedFiles.Add(fs);
+                    Logger.Log($"Locked file for protection: {file}");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log($"Failed to lock file {file}: {ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Log($"Error in PreventUninstall: {ex.Message}");
+        }
     }
 }
