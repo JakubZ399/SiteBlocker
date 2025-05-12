@@ -4,6 +4,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:controls="clr-namespace:SiteBlocker.UI.Controls"
+        xmlns:converters="clr-namespace:SiteBlocker.UI.Converters"
         mc:Ignorable="d"
         Title="SiteBlocker"
         Height="650"
@@ -16,6 +18,7 @@
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
     </Window.Resources>
     
     <Grid>
@@ -89,161 +92,176 @@
                         </DockPanel>
                     </materialDesign:ColorZone>
 
-                    <!-- Main content area with cards -->
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <Grid Margin="20">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
+                    <!-- Main content area with tabs -->
+                    <TabControl Style="{StaticResource MaterialDesignTabControl}">
+                        <!-- Home / Status Tab -->
+                        <TabItem Header="Status">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <Grid Margin="20">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
 
-                            <!-- Status card -->
-                            <materialDesign:Card Grid.Row="0" 
-                                                 Margin="0,0,0,16" 
-                                                 Padding="16" 
-                                                 Background="{StaticResource SurfaceBrush}"
-                                                 materialDesign:ElevationAssist.Elevation="Dp2">
-                                <DockPanel>
-                                    <materialDesign:PackIcon Kind="ShieldCheck" Width="32" Height="32" DockPanel.Dock="Left" VerticalAlignment="Center" />
-                                    <StackPanel Margin="16,0,0,0">
-                                        <TextBlock x:Name="StatusTextBlock" Text="Status: Blocking disabled" FontWeight="Bold" FontSize="16" />
-                                        <TextBlock x:Name="TimeRemainingTextBlock" Text="Time remaining: -" Margin="0,5,0,0" Opacity="0.7" />
-                                    </StackPanel>
-                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <!-- Start Button - Orange -->
-                                        <Button x:Name="StartBlockingButton"
-                                                Background="{StaticResource AccentBrush}"
-                                                Foreground="{StaticResource TextBrush}"
-                                                Style="{StaticResource MaterialDesignRaisedButton}"
-                                                Margin="0,0,8,0"
-                                                Click="StartBlockingButton_Click">
-                                            START BLOCKING
-                                        </Button>
-                                        <!-- Stop Button - Gray outline with orange text -->
-                                        <Button x:Name="StopBlockingButton"
-                                                Foreground="{StaticResource AccentBrush}"
-                                                Style="{StaticResource MaterialDesignOutlinedButton}"
-                                                Click="StopBlockingButton_Click">
-                                            STOP BLOCKING
-                                        </Button>
-                                    </StackPanel>
-                                </DockPanel>
-                            </materialDesign:Card>
+                                    <!-- Status card -->
+                                    <materialDesign:Card Grid.Row="0" 
+                                                         Margin="0,0,0,16" 
+                                                         Padding="16" 
+                                                         Background="{StaticResource SurfaceBrush}"
+                                                         materialDesign:ElevationAssist.Elevation="Dp2">
+                                        <DockPanel>
+                                            <materialDesign:PackIcon Kind="ShieldCheck" Width="32" Height="32" DockPanel.Dock="Left" VerticalAlignment="Center" />
+                                            <StackPanel Margin="16,0,0,0">
+                                                <TextBlock x:Name="StatusTextBlock" Text="Status: Blocking disabled" FontWeight="Bold" FontSize="16" />
+                                                <TextBlock x:Name="TimeRemainingTextBlock" Text="Time remaining: -" Margin="0,5,0,0" Opacity="0.7" />
+                                            </StackPanel>
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <!-- Start Button - Orange -->
+                                                <Button x:Name="StartBlockingButton"
+                                                        Background="{StaticResource AccentBrush}"
+                                                        Foreground="{StaticResource TextBrush}"
+                                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                                        Margin="0,0,8,0"
+                                                        Click="StartBlockingButton_Click">
+                                                    START BLOCKING
+                                                </Button>
+                                                <!-- Stop Button - Gray outline with orange text -->
+                                                <Button x:Name="StopBlockingButton"
+                                                        Foreground="{StaticResource AccentBrush}"
+                                                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                        Click="StopBlockingButton_Click">
+                                                    STOP BLOCKING
+                                                </Button>
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </materialDesign:Card>
 
-                            <!-- Add site card -->
-                            <materialDesign:Card Grid.Row="1" 
-                                                 Margin="0,0,0,16" 
-                                                 Padding="16" 
-                                                 Background="{StaticResource SurfaceBrush}"
-                                                 materialDesign:ElevationAssist.Elevation="Dp2">
-                                <StackPanel>
-                                    <TextBlock Text="Add Website to Block" FontWeight="Medium" FontSize="16" Margin="0,0,0,16" />
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBox x:Name="SiteTextBox"
-                                                 Grid.Column="0"
-                                                 Margin="0,0,16,0"
-                                                 materialDesign:HintAssist.Hint="Enter domain to block (e.g., facebook.com)"
-                                                 Style="{StaticResource MaterialDesignOutlinedTextBox}" />
-                                        <Button x:Name="AddSiteButton"
-                                                Grid.Column="1"
-                                                Content="ADD SITE"
-                                                Background="{StaticResource AccentBrush}"
-                                                Foreground="White"
-                                                Style="{StaticResource MaterialDesignRaisedButton}"
-                                                Click="AddSiteButton_Click" />
-                                    </Grid>
+                                    <!-- Add site card -->
+                                    <materialDesign:Card Grid.Row="1" 
+                                                         Margin="0,0,0,16" 
+                                                         Padding="16" 
+                                                         Background="{StaticResource SurfaceBrush}"
+                                                         materialDesign:ElevationAssist.Elevation="Dp2">
+                                        <StackPanel>
+                                            <TextBlock Text="Add Website to Block" FontWeight="Medium" FontSize="16" Margin="0,0,0,16" />
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox x:Name="SiteTextBox"
+                                                         Grid.Column="0"
+                                                         Margin="0,0,16,0"
+                                                         materialDesign:HintAssist.Hint="Enter domain to block (e.g., facebook.com)"
+                                                         Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+                                                <Button x:Name="AddSiteButton"
+                                                        Grid.Column="1"
+                                                        Content="ADD SITE"
+                                                        Background="{StaticResource AccentBrush}"
+                                                        Foreground="White"
+                                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                                        Click="AddSiteButton_Click" />
+                                            </Grid>
 
-                                    <!-- Blocking methods toggles -->
-                                    <Expander Header="Blocking Methods" Margin="0,16,0,0">
-                                        <StackPanel Margin="8">
-                                            <DockPanel Margin="0,8,0,8">
-                                                <TextBlock Text="Hosts File Blocking" VerticalAlignment="Center" />
-                                                <ToggleButton x:Name="HostsFileCheckBox" IsChecked="True" Style="{StaticResource MaterialDesignSwitchToggleButton}" DockPanel.Dock="Right" />
-                                            </DockPanel>
-                                            <DockPanel Margin="0,8,0,8">
-                                                <TextBlock Text="Windows Firewall" VerticalAlignment="Center" />
-                                                <ToggleButton x:Name="FirewallCheckBox" IsChecked="True" Style="{StaticResource MaterialDesignSwitchToggleButton}" DockPanel.Dock="Right" />
-                                            </DockPanel>
-                                            <DockPanel Margin="0,8,0,8">
-                                                <TextBlock Text="Deep Packet Filtering (WFP)" VerticalAlignment="Center" />
-                                                <ToggleButton x:Name="WfpCheckBox" IsChecked="False" Style="{StaticResource MaterialDesignSwitchToggleButton}" DockPanel.Dock="Right" />
-                                            </DockPanel>
+                                            <!-- Blocking methods toggles -->
+                                            <Expander Header="Blocking Methods" Margin="0,16,0,0">
+                                                <StackPanel Margin="8">
+                                                    <DockPanel Margin="0,8,0,8">
+                                                        <TextBlock Text="Hosts File Blocking" VerticalAlignment="Center" />
+                                                        <ToggleButton x:Name="HostsFileCheckBox" IsChecked="True" Style="{StaticResource MaterialDesignSwitchToggleButton}" DockPanel.Dock="Right" />
+                                                    </DockPanel>
+                                                    <DockPanel Margin="0,8,0,8">
+                                                        <TextBlock Text="Windows Firewall" VerticalAlignment="Center" />
+                                                        <ToggleButton x:Name="FirewallCheckBox" IsChecked="True" Style="{StaticResource MaterialDesignSwitchToggleButton}" DockPanel.Dock="Right" />
+                                                    </DockPanel>
+                                                    <DockPanel Margin="0,8,0,8">
+                                                        <TextBlock Text="Deep Packet Filtering (WFP)" VerticalAlignment="Center" />
+                                                        <ToggleButton x:Name="WfpCheckBox" IsChecked="False" Style="{StaticResource MaterialDesignSwitchToggleButton}" DockPanel.Dock="Right" />
+                                                    </DockPanel>
+                                                </StackPanel>
+                                            </Expander>
                                         </StackPanel>
-                                    </Expander>
-                                </StackPanel>
-                            </materialDesign:Card>
+                                    </materialDesign:Card>
 
-                            <!-- Blocked sites list card -->
-                            <materialDesign:Card Grid.Row="2" 
-                                                 Margin="0,0,0,16" 
-                                                 Padding="16" 
-                                                 Background="{StaticResource SurfaceBrush}"
-                                                 materialDesign:ElevationAssist.Elevation="Dp2">
-                                <DockPanel>
-                                    <TextBlock Text="Blocked Websites" FontWeight="Medium" FontSize="16" DockPanel.Dock="Top" Margin="0,0,0,16" />
-                                    <ListView x:Name="BlockedSitesListBox" DockPanel.Dock="Top">
-                                        <ListView.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid Margin="8">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto" />
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                    </Grid.ColumnDefinitions>
-                                                    <materialDesign:PackIcon Kind="Link" Grid.Column="0" Margin="0,0,8,0" VerticalAlignment="Center" />
-                                                    <TextBlock Grid.Column="1" Text="{Binding}" VerticalAlignment="Center" />
-                                                    <Button Grid.Column="2"
-                                                            Style="{StaticResource MaterialDesignIconButton}"
-                                                            Tag="{Binding}"
-                                                            Click="RemoveSiteButton_Click">
-                                                        <materialDesign:PackIcon Kind="Delete" />
-                                                    </Button>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ListView.ItemTemplate>
-                                    </ListView>
+                                    <!-- Blocked sites list card -->
+                                    <materialDesign:Card Grid.Row="2" 
+                                                         Margin="0,0,0,16" 
+                                                         Padding="16" 
+                                                         Background="{StaticResource SurfaceBrush}"
+                                                         materialDesign:ElevationAssist.Elevation="Dp2">
+                                        <DockPanel>
+                                            <TextBlock Text="Blocked Websites" FontWeight="Medium" FontSize="16" DockPanel.Dock="Top" Margin="0,0,0,16" />
+                                            <ListView x:Name="BlockedSitesListBox" DockPanel.Dock="Top">
+                                                <ListView.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Margin="8">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto" />
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <materialDesign:PackIcon Kind="Link" Grid.Column="0" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                                            <TextBlock Grid.Column="1" Text="{Binding}" VerticalAlignment="Center" />
+                                                            <Button Grid.Column="2"
+                                                                    Style="{StaticResource MaterialDesignIconButton}"
+                                                                    Tag="{Binding}"
+                                                                    Click="RemoveSiteButton_Click">
+                                                                <materialDesign:PackIcon Kind="Delete" />
+                                                            </Button>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ListView.ItemTemplate>
+                                            </ListView>
 
-                                    <!-- Empty state message -->
-                                    <TextBlock Text="No websites blocked yet. Add some sites above."
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               Opacity="0.5"
-                                               FontStyle="Italic"
-                                               Visibility="{Binding ElementName=BlockedSitesListBox, Path=HasItems, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=inverse}" />
-                                </DockPanel>
-                            </materialDesign:Card>
+                                            <!-- Empty state message -->
+                                            <TextBlock Text="No websites blocked yet. Add some sites above."
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       Opacity="0.5"
+                                                       FontStyle="Italic"
+                                                       Visibility="{Binding ElementName=BlockedSitesListBox, Path=HasItems, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
+                                        </DockPanel>
+                                    </materialDesign:Card>
 
-                            <!-- Schedule card (simple version) -->
-                            <materialDesign:Card Grid.Row="3" 
-                                                 Padding="16" 
-                                                 Background="{StaticResource SurfaceBrush}"
-                                                 materialDesign:ElevationAssist.Elevation="Dp2">
-                                <StackPanel>
-                                    <TextBlock Text="Quick Schedule" FontWeight="Medium" FontSize="16" Margin="0,0,0,16" />
-                                    <DockPanel Margin="0,8,0,8">
-                                        <TextBlock Text="Use Schedule" VerticalAlignment="Center" />
-                                        <ToggleButton x:Name="UseScheduleCheckBox"
-                                                      IsChecked="True"
-                                                      Style="{StaticResource MaterialDesignSwitchToggleButton}"
-                                                      DockPanel.Dock="Right"
-                                                      Click="UseScheduleCheckBox_Click" />
-                                    </DockPanel>
-                                    <TextBlock Text="Set active blocking times" Margin="0,16,0,8" />
-                                    <Button Content="MANAGE SCHEDULE"
-                                            Style="{StaticResource MaterialDesignFlatButton}"
-                                            HorizontalAlignment="Right"
-                                            Margin="0,8,0,0"
-                                            Click="AddScheduleButton_Click" />
-                                </StackPanel>
-                            </materialDesign:Card>
-                        </Grid>
-                    </ScrollViewer>
+                                    <!-- Schedule card (simple version) -->
+                                    <materialDesign:Card Grid.Row="3" 
+                                                         Padding="16" 
+                                                         Background="{StaticResource SurfaceBrush}"
+                                                         materialDesign:ElevationAssist.Elevation="Dp2">
+                                        <StackPanel>
+                                            <TextBlock Text="Quick Schedule" FontWeight="Medium" FontSize="16" Margin="0,0,0,16" />
+                                            <DockPanel Margin="0,8,0,8">
+                                                <TextBlock Text="Use Schedule" VerticalAlignment="Center" />
+                                                <ToggleButton x:Name="UseScheduleCheckBox"
+                                                              IsChecked="True"
+                                                              Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                                                              DockPanel.Dock="Right"
+                                                              Click="UseScheduleCheckBox_Click" />
+                                            </DockPanel>
+                                            <TextBlock Text="Set active blocking times" Margin="0,16,0,8" />
+                                            <Button Content="MANAGE SCHEDULE"
+                                                    Style="{StaticResource MaterialDesignFlatButton}"
+                                                    HorizontalAlignment="Right"
+                                                    Margin="0,8,0,0"
+                                                    Click="AddScheduleButton_Click" />
+                                        </StackPanel>
+                                    </materialDesign:Card>
+                                </Grid>
+                            </ScrollViewer>
+                        </TabItem>
+                        
+                        <!-- Sessions Tab -->
+                        <TabItem Header="Sessions">
+                            <controls:SessionsControl x:Name="SessionsControl" Margin="20" ConfigChanged="SessionsControl_ConfigChanged"/>
+                        </TabItem>
+                        
+                        <!-- Block Lists Tab -->
+                        <TabItem Header="Block Lists">
+                            <controls:BlockListsControl x:Name="BlockListsControl" Margin="20" ConfigChanged="BlockListsControl_ConfigChanged"/>
+                        </TabItem>
+                    </TabControl>
                 </DockPanel>
             </materialDesign:DrawerHost>
         </materialDesign:DialogHost>
@@ -267,6 +285,5 @@
                 <ComboBox x:Name="EndMinuteComboBox" />
             </StackPanel>
         </Grid>
-        
     </Grid>
 </Window>

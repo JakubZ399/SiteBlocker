@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using SiteBlocker.Core;
+using SiteBlocker.UI.Dialogs;
 
 namespace SiteBlocker.UI
 {
@@ -26,6 +27,10 @@ namespace SiteBlocker.UI
 
             // Load configuration
             LoadConfig();
+            
+            // Initialize new controls for block lists and sessions
+            BlockListsControl.Initialize(_config);
+            SessionsControl.Initialize(_config, _blocker);
             
             InitializeScheduleComponents();
 
@@ -193,7 +198,7 @@ namespace SiteBlocker.UI
 
         private void RemoveSiteButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is System.Windows.Controls.Button button && button.Tag is string site)
+            if (sender is Button button && button.Tag is string site)
             {
                 // Remove site from the list
                 _blockedSites.Remove(site);
@@ -448,6 +453,17 @@ namespace SiteBlocker.UI
                 return _config.VerifyPassword(passwordDialog.Password);
             }
             return false;
+        }
+        
+        // Event handlers for the new controls
+        private void SessionsControl_ConfigChanged(object sender, EventArgs e)
+        {
+            SaveConfig();
+        }
+
+        private void BlockListsControl_ConfigChanged(object sender, EventArgs e)
+        {
+            SaveConfig();
         }
     }
 }
