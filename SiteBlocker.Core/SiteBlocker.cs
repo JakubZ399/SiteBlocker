@@ -8,15 +8,65 @@ namespace SiteBlocker.Core;
 
 public class SiteBlocker
 {
-    // Ścieżka do pliku hosts w systemie Windows
+    private readonly FirewallBlocker _firewallBlocker = new FirewallBlocker();
     private readonly string _hostsPath = @"C:\Windows\System32\drivers\etc\hosts";
-    
-    // Znaczniki oznaczające naszą sekcję w pliku hosts
+
     private const string MARKER_START = "# BEGIN SITE_BLOCKER";
     private const string MARKER_END = "# END SITE_BLOCKER";
     
-    // Metoda blokująca listę stron
-public bool BlockSites(List<string> sites)
+    public SiteBlocker()
+    {
+        Logger.Log("Inicjalizacja SiteBlocker - czyszczenie starych reguł zapory...");
+        try
+        {
+            _firewallBlocker.UnblockAllDomains();
+        }
+        catch (Exception ex)
+        {
+            Logger.Log($"Ostrzeżenie: Nie udało się wyczyścić starych reguł: {ex.Message}");
+        }
+    }
+    
+    public bool BlockSites(List<string> sites)
+    {
+        try
+        {
+            if (sites == null || sites.Count == 0)
+                return false;
+
+            Logger.Log($"Blokowanie {sites.Count} stron...");
+        
+            bool hostsSuccess = BlockSitesWithHosts(sites);
+            bool firewallSuccess = BlockSitesWithFirewall(sites);
+        
+            FlushDnsCache();
+        
+            return hostsSuccess || firewallSuccess;
+        }
+        catch (Exception ex)
+        {
+            Logger.Log($"Błąd blokowania stron: {ex.Message}");
+            return false;
+        }
+    }
+
+    private bool BlockSitesWithFirewall(List<string> sites)
+    {
+        bool success = true;
+    
+        foreach (string site in sites)
+        {
+            if (!string.IsNullOrWhiteSpace(site))
+            {
+                if (!_firewallBlocker.BlockDomain(site))
+                    success = false;
+            }
+        }
+    
+        return success;
+    }
+
+private bool BlockSitesWithHosts(List<string> sites)
 {
     try
     {
@@ -24,20 +74,20 @@ public bool BlockSites(List<string> sites)
         if (sites == null || sites.Count == 0)
             return false;
 
-        Console.WriteLine($"Blokowanie {sites.Count} stron...");
-        
+        Logger.Log($"Blokowanie {sites.Count} stron przez plik hosts...");
+
         // Odczytaj istniejący plik hosts
         string hostsContent = File.ReadAllText(_hostsPath);
-        Console.WriteLine("Odczytano plik hosts");
+        Logger.Log("Odczytano plik hosts");
 
         // Usuń poprzednią sekcję blokady, jeśli istnieje
         hostsContent = RemoveBlockerSection(hostsContent);
-        Console.WriteLine("Usunięto poprzednią sekcję blokady");
+        Logger.Log("Usunięto poprzednią sekcję blokady");
 
         // Dodaj nową sekcję blokowania
         StringBuilder blockerSection = new StringBuilder();
         blockerSection.AppendLine(MARKER_START);
-        
+
         foreach (string site in sites)
         {
             if (!string.IsNullOrWhiteSpace(site))
@@ -46,83 +96,105 @@ public bool BlockSites(List<string> sites)
                 string cleanSite = site
                     .Replace("http://", "")
                     .Replace("https://", "")
-                    .TrimEnd('/');  // Usuń końcowy ukośnik
-                
+                    .TrimEnd('/'); // Usuń końcowy ukośnik
+
                 // Wyodrębnij samą domenę (bez ścieżki i parametrów)
                 int pathIndex = cleanSite.IndexOf('/');
                 if (pathIndex > 0)
                 {
                     cleanSite = cleanSite.Substring(0, pathIndex);
                 }
-                
+
                 int queryIndex = cleanSite.IndexOf('?');
                 if (queryIndex > 0)
                 {
                     cleanSite = cleanSite.Substring(0, queryIndex);
                 }
-                
+
                 // Dodaj wpis dla głównej domeny
                 string baseDomain = cleanSite;
                 if (baseDomain.StartsWith("www."))
                 {
                     baseDomain = baseDomain.Substring(4);
                 }
-                
+
                 // Dodaj wszystkie warianty domeny
                 blockerSection.AppendLine($"127.0.0.1 {baseDomain}");
                 blockerSection.AppendLine($"127.0.0.1 www.{baseDomain}");
-                
-                Console.WriteLine($"Dodano blokadę dla: {baseDomain}");
+
+                Logger.Log($"Dodano blokadę hosts dla: {baseDomain}");
             }
         }
-        
+
         blockerSection.AppendLine(MARKER_END);
-        
+
         // Zapisz zmodyfikowany plik hosts
         File.WriteAllText(_hostsPath, hostsContent + Environment.NewLine + blockerSection.ToString());
-        Console.WriteLine("Zapisano zmodyfikowany plik hosts");
-        
-        // Bardziej dokładne odświeżenie DNS cache
-        FlushDnsCache();
-        Console.WriteLine("Odświeżono pamięć DNS");
-        
+        Logger.Log("Zapisano zmodyfikowany plik hosts");
+
         return true;
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"BŁĄD podczas blokowania stron: {ex.Message}");
+        Logger.Log($"Błąd podczas blokowania przez plik hosts: {ex.Message}");
         return false;
     }
 }
-    
-    // Metoda usuwająca blokadę
-    public bool UnblockSites()
+
+public bool UnblockSites()
+{
+    try
+    {
+        Logger.Log("Odblokowywanie stron...");
+        
+        bool hostsSuccess = UnblockSitesFromHosts();
+        
+        bool firewallSuccess = _firewallBlocker.UnblockAllDomains();
+        Logger.Log($"Usunięto reguły zapory: {firewallSuccess}");
+        
+        FlushDnsCache();
+        
+        return hostsSuccess || firewallSuccess;
+    }
+    catch (Exception ex)
+    {
+        Logger.Log($"Błąd odblokowywania stron: {ex.Message}");
+        return false;
+    }
+}
+
+    private bool UnblockSitesFromHosts()
     {
         try
         {
+            Logger.Log("Odblokowywanie stron z pliku hosts...");
+        
             // Odczytaj istniejący plik hosts
             string hostsContent = File.ReadAllText(_hostsPath);
 
             // Usuń sekcję blokady
             string newContent = RemoveBlockerSection(hostsContent);
-            
+
             // Zapisz plik tylko jeśli zawartość rzeczywiście się zmieniła
             if (newContent != hostsContent)
             {
                 File.WriteAllText(_hostsPath, newContent);
-                FlushDnsCache();
+                Logger.Log("Usunięto blokady z pliku hosts");
             }
-            
+            else
+            {
+                Logger.Log("Brak blokad do usunięcia w pliku hosts");
+            }
+
             return true;
         }
         catch (Exception ex)
         {
-            // W produkcyjnej wersji zapisz błąd do logów
-            Console.WriteLine($"Błąd podczas odblokowywania stron: {ex.Message}");
+            Logger.Log($"Błąd podczas odblokowywania przez plik hosts: {ex.Message}");
             return false;
         }
     }
-    
+
     // Pomocnicza metoda do usuwania sekcji blokady z pliku hosts
     private string RemoveBlockerSection(string hostsContent)
     {
@@ -133,16 +205,18 @@ public bool BlockSites(List<string> sites)
         {
             // Usuń całą sekcję blokady wraz z końcowym znacznikiem i nową linią
             return hostsContent.Remove(
-                startIndex, 
-                endIndex + MARKER_END.Length - startIndex + 
-                (endIndex + MARKER_END.Length < hostsContent.Length && 
-                 hostsContent[endIndex + MARKER_END.Length] == '\n' ? 1 : 0)
+                startIndex,
+                endIndex + MARKER_END.Length - startIndex +
+                (endIndex + MARKER_END.Length < hostsContent.Length &&
+                 hostsContent[endIndex + MARKER_END.Length] == '\n'
+                    ? 1
+                    : 0)
             );
         }
-        
+
         return hostsContent;
     }
-    
+
     // Metoda odświeżająca DNS cache
     private void FlushDnsCache()
     {
@@ -156,12 +230,12 @@ public bool BlockSites(List<string> sites)
                 RedirectStandardOutput = true,
                 Verb = "runas" // Uruchom jako administrator
             };
-        
+
             using (Process ipConfigProcess = Process.Start(ipConfigPsi))
             {
                 ipConfigProcess?.WaitForExit();
             }
-        
+
             // 2. Restart usługi DNS Client (opcjonalnie, może wymagać dodatkowych uprawnień)
             ProcessStartInfo dnsRestartPsi = new ProcessStartInfo("net", "stop dnscache")
             {
@@ -170,12 +244,12 @@ public bool BlockSites(List<string> sites)
                 RedirectStandardOutput = true,
                 Verb = "runas"
             };
-        
+
             using (Process dnsStopProcess = Process.Start(dnsRestartPsi))
             {
                 dnsStopProcess?.WaitForExit();
             }
-        
+
             ProcessStartInfo dnsStartPsi = new ProcessStartInfo("net", "start dnscache")
             {
                 CreateNoWindow = true,
@@ -183,7 +257,7 @@ public bool BlockSites(List<string> sites)
                 RedirectStandardOutput = true,
                 Verb = "runas"
             };
-        
+
             using (Process dnsStartProcess = Process.Start(dnsStartPsi))
             {
                 dnsStartProcess?.WaitForExit();
@@ -191,7 +265,7 @@ public bool BlockSites(List<string> sites)
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ostrzeżenie: Nie udało się odświeżyć pamięci DNS: {ex.Message}");
+            Logger.Log($"Ostrzeżenie: Nie udało się odświeżyć pamięci DNS: {ex.Message}");
             // Ignoruj błędy, ale zapisz informację
         }
     }
@@ -200,16 +274,26 @@ public bool BlockSites(List<string> sites)
     {
         try
         {
-            // Przywróć plik hosts do bezpiecznego stanu
+            Logger.Log("Przywracanie systemu do normalnego stanu (tryb awaryjny)...");
+
+            // Przywróć plik hosts
             string hostsContent = File.ReadAllText(_hostsPath);
             string newContent = RemoveBlockerSection(hostsContent);
             File.WriteAllText(_hostsPath, newContent);
+
+            // Usuń wszystkie reguły zapory
+            _firewallBlocker.UnblockAllDomains();
+
+            // Odśwież DNS
             FlushDnsCache();
+
+            Logger.Log("System został przywrócony do normalnego stanu.");
+
             return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Błąd podczas przywracania systemu: {ex.Message}");
+            Logger.Log($"Błąd podczas przywracania systemu: {ex.Message}");
             return false;
         }
     }
