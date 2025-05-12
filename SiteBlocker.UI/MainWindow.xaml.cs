@@ -21,13 +21,14 @@ namespace SiteBlocker.UI
         public MainWindow()
         {
             InitializeComponent();
-            InitializeScheduleComponents();
 
             // Ścieżka do pliku konfiguracyjnego
             _configPath = BlockerConfig.DefaultConfigPath;
 
             // Załaduj konfigurację
             LoadConfig();
+            
+            InitializeScheduleComponents();
 
             // Ustaw timer do aktualizacji informacji o pozostałym czasie
             _timer.Interval = TimeSpan.FromSeconds(1);
@@ -283,6 +284,14 @@ namespace SiteBlocker.UI
             foreach (var item in _config.BlockingSchedule)
             {
                 _scheduleItems.Add(item);
+            }
+            
+            if (_config != null && _config.BlockingSchedule != null)
+            {
+                foreach (var item in _config.BlockingSchedule)
+                {
+                    _scheduleItems.Add(item);
+                }
             }
         }
 
