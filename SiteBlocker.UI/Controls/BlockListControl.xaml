@@ -1,0 +1,148 @@
+﻿<UserControl x:Class="SiteBlocker.UI.Controls.BlockListsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters="clr-namespace:SiteBlocker.UI.Converters"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800">
+    
+    <UserControl.Resources>
+        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        
+        <!-- Block Lists Panel Header -->
+        <DockPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,0">
+            <TextBlock Text="Block Lists" FontSize="18" FontWeight="Medium" Margin="0,0,0,10" DockPanel.Dock="Left"/>
+            <Button x:Name="AddListButton" Style="{StaticResource MaterialDesignFloatingActionMiniButton}" 
+                    HorizontalAlignment="Right" Click="AddListButton_Click" DockPanel.Dock="Right"
+                    ToolTip="Add a new block list" Background="{StaticResource AccentBrush}">
+                <materialDesign:PackIcon Kind="PlusCircle" Height="20" Width="20"/>
+            </Button>
+        </DockPanel>
+        
+        <!-- Sites Panel Header -->
+        <DockPanel Grid.Row="0" Grid.Column="1">
+            <TextBlock x:Name="SelectedListName" Text="Select a list" FontSize="18" FontWeight="Medium" Margin="0,0,0,10" DockPanel.Dock="Left"/>
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                <Button x:Name="ImportPresetsButton" 
+                        Style="{StaticResource MaterialDesignOutlinedButton}" 
+                        Content="Import Presets" 
+                        Margin="0,0,8,0" Click="ImportPresetsButton_Click"
+                        IsEnabled="{Binding ElementName=SaveListButton, Path=IsEnabled}"/>
+                <Button x:Name="SaveListButton" 
+                        Style="{StaticResource MaterialDesignRaisedButton}" 
+                        Content="Save Changes" 
+                        Background="{StaticResource AccentBrush}" Foreground="White" 
+                        Click="SaveListButton_Click"
+                        IsEnabled="False"/>
+            </StackPanel>
+        </DockPanel>
+        
+        <!-- Left Panel - List of Block Lists -->
+        <materialDesign:Card Grid.Row="1" Grid.Column="0" Margin="0,0,10,0" Background="{StaticResource SurfaceBrush}">
+            <DockPanel>
+                <ListView x:Name="BlockListsListView" DockPanel.Dock="Top" SelectionChanged="BlockListsListView_SelectionChanged">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Sites.Count, StringFormat=({0})}" Margin="5,0,5,0" Opacity="0.7" VerticalAlignment="Center"/>
+                                <Button Grid.Column="2" Style="{StaticResource MaterialDesignIconButton}" 
+                                        Click="DeleteListButton_Click" Tag="{Binding}" 
+                                        IsEnabled="{Binding IsBuiltIn, Converter={StaticResource InverseBooleanConverter}}">
+                                    <materialDesign:PackIcon Kind="Delete" Height="20" Width="20"/>
+                                </Button>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+                <TextBlock Text="No block lists available. Create one using the '+' button above." 
+                           HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" 
+                           Opacity="0.5" FontStyle="Italic" Margin="10"
+                           Visibility="{Binding ElementName=BlockListsListView, Path=HasItems, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+            </DockPanel>
+        </materialDesign:Card>
+        
+        <!-- Right Panel - Sites in Selected Block List -->
+        <materialDesign:Card Grid.Row="1" Grid.Column="1" Background="{StaticResource SurfaceBrush}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                
+                <!-- Add site input -->
+                <Grid Grid.Row="0" Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" x:Name="AddSiteTextBox" Margin="0,0,10,0" 
+                             materialDesign:HintAssist.Hint="Enter domain to block (e.g., facebook.com)" 
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                             IsEnabled="{Binding ElementName=SaveListButton, Path=IsEnabled}"/>
+                    <Button Grid.Column="1" x:Name="AddSiteButton" Content="ADD SITE" 
+                            Background="{StaticResource AccentBrush}" Foreground="White" 
+                            Style="{StaticResource MaterialDesignRaisedButton}" Click="AddSiteButton_Click"
+                            IsEnabled="{Binding ElementName=SaveListButton, Path=IsEnabled}"/>
+                </Grid>
+                
+                <!-- Sites list -->
+                <ListView Grid.Row="1" x:Name="SitesListView" Margin="10">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <materialDesign:PackIcon Grid.Column="0" Kind="Link" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding}" VerticalAlignment="Center"/>
+                                <Button Grid.Column="2" Style="{StaticResource MaterialDesignIconButton}" 
+                                        Click="RemoveSiteButton_Click" Tag="{Binding}"
+                                        IsEnabled="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}, Path=IsEditEnabled}">
+                                    <materialDesign:PackIcon Kind="Delete" Height="20" Width="20"/>
+                                </Button>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+                
+                <!-- Empty state message -->
+                <TextBlock Grid.Row="1" Text="No websites in this list. Add some sites above or import from presets." 
+                           HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"
+                           Margin="50" Opacity="0.5" FontStyle="Italic"
+                           Visibility="{Binding ElementName=SitesListView, Path=HasItems, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                
+                <!-- No list selected message -->
+                <Grid Grid.Row="0" Grid.RowSpan="2" Background="{StaticResource SurfaceBrush}" 
+                      Visibility="{Binding ElementName=SaveListButton, Path=IsEnabled, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                    <TextBlock Text="Select a block list from the left panel or create a new one." 
+                               HorizontalAlignment="Center" VerticalAlignment="Center" 
+                               Opacity="0.5" FontStyle="Italic"/>
+                </Grid>
+            </Grid>
+        </materialDesign:Card>
+    </Grid>
+</UserControl>

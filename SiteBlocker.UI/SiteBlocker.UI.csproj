@@ -14,6 +14,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Page Include="Controls\BlockListControl.xaml" />
+        <Page Include="Controls\SessionsControl.xaml" />
+        <Page Include="Dialogs\PresetSelectorDialog.xaml" />
+        <Page Include="Dialogs\TextInputDialog.xaml" />
         <Page Include="MainWindow.xaml">
             <Generator>MSBuild:Compile</Generator>
         </Page>
