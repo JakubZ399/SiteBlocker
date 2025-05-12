@@ -54,8 +54,10 @@
                         <Button DockPanel.Dock="Bottom"
                                 x:Name="EmergencyButton"
                                 Margin="16,16,16,16"
-                                Style="{StaticResource MaterialDesignFlatDarkButton}"
-                                materialDesign:ElevationAssist.Elevation="Dp1"
+                                Background="#B71C1C"
+                                Foreground="White"
+                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                materialDesign:ElevationAssist.Elevation="Dp3"
                                 Click="EmergencyButton_Click">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Alert" Width="24" Height="24" VerticalAlignment="Center" />
@@ -68,12 +70,20 @@
                 <!-- Main content -->
                 <DockPanel>
                     <!-- App bar -->
-                    <materialDesign:ColorZone Mode="PrimaryDark" Padding="16" DockPanel.Dock="Top" materialDesign:ElevationAssist.Elevation="Dp2">
+                    <materialDesign:ColorZone Mode="Dark" 
+                                              Background="{StaticResource PrimaryBrush}" 
+                                              Padding="16" 
+                                              DockPanel.Dock="Top" 
+                                              materialDesign:ElevationAssist.Elevation="Dp2">
                         <DockPanel>
                             <ToggleButton x:Name="MenuToggleButton"
                                           Style="{StaticResource MaterialDesignHamburgerToggleButton}"
+                                          Foreground="{StaticResource AccentBrush}"
                                           DockPanel.Dock="Left" />
-                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="22">
+                            <TextBlock HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center" 
+                                       FontSize="22"
+                                       Foreground="{StaticResource TextBrush}">
                                 SiteBlocker - Take Control
                             </TextBlock>
                         </DockPanel>
@@ -90,7 +100,11 @@
                             </Grid.RowDefinitions>
 
                             <!-- Status card -->
-                            <materialDesign:Card Grid.Row="0" Margin="0,0,0,16" Padding="16" Background="{DynamicResource SurfaceBrush}">
+                            <materialDesign:Card Grid.Row="0" 
+                                                 Margin="0,0,0,16" 
+                                                 Padding="16" 
+                                                 Background="{StaticResource SurfaceBrush}"
+                                                 materialDesign:ElevationAssist.Elevation="Dp2">
                                 <DockPanel>
                                     <materialDesign:PackIcon Kind="ShieldCheck" Width="32" Height="32" DockPanel.Dock="Left" VerticalAlignment="Center" />
                                     <StackPanel Margin="16,0,0,0">
@@ -98,13 +112,18 @@
                                         <TextBlock x:Name="TimeRemainingTextBlock" Text="Time remaining: -" Margin="0,5,0,0" Opacity="0.7" />
                                     </StackPanel>
                                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <!-- Start Button - Orange -->
                                         <Button x:Name="StartBlockingButton"
+                                                Background="{StaticResource AccentBrush}"
+                                                Foreground="{StaticResource TextBrush}"
                                                 Style="{StaticResource MaterialDesignRaisedButton}"
                                                 Margin="0,0,8,0"
                                                 Click="StartBlockingButton_Click">
                                             START BLOCKING
                                         </Button>
+                                        <!-- Stop Button - Gray outline with orange text -->
                                         <Button x:Name="StopBlockingButton"
+                                                Foreground="{StaticResource AccentBrush}"
                                                 Style="{StaticResource MaterialDesignOutlinedButton}"
                                                 Click="StopBlockingButton_Click">
                                             STOP BLOCKING
@@ -114,7 +133,11 @@
                             </materialDesign:Card>
 
                             <!-- Add site card -->
-                            <materialDesign:Card Grid.Row="1" Margin="0,0,0,16" Padding="16" Background="{DynamicResource SurfaceBrush}">
+                            <materialDesign:Card Grid.Row="1" 
+                                                 Margin="0,0,0,16" 
+                                                 Padding="16" 
+                                                 Background="{StaticResource SurfaceBrush}"
+                                                 materialDesign:ElevationAssist.Elevation="Dp2">
                                 <StackPanel>
                                     <TextBlock Text="Add Website to Block" FontWeight="Medium" FontSize="16" Margin="0,0,0,16" />
                                     <Grid>
@@ -130,6 +153,8 @@
                                         <Button x:Name="AddSiteButton"
                                                 Grid.Column="1"
                                                 Content="ADD SITE"
+                                                Background="{StaticResource AccentBrush}"
+                                                Foreground="White"
                                                 Style="{StaticResource MaterialDesignRaisedButton}"
                                                 Click="AddSiteButton_Click" />
                                     </Grid>
@@ -155,7 +180,11 @@
                             </materialDesign:Card>
 
                             <!-- Blocked sites list card -->
-                            <materialDesign:Card Grid.Row="2" Margin="0,0,0,16" Padding="16" Background="{DynamicResource SurfaceBrush}">
+                            <materialDesign:Card Grid.Row="2" 
+                                                 Margin="0,0,0,16" 
+                                                 Padding="16" 
+                                                 Background="{StaticResource SurfaceBrush}"
+                                                 materialDesign:ElevationAssist.Elevation="Dp2">
                                 <DockPanel>
                                     <TextBlock Text="Blocked Websites" FontWeight="Medium" FontSize="16" DockPanel.Dock="Top" Margin="0,0,0,16" />
                                     <ListView x:Name="BlockedSitesListBox" DockPanel.Dock="Top">
@@ -191,7 +220,10 @@
                             </materialDesign:Card>
 
                             <!-- Schedule card (simple version) -->
-                            <materialDesign:Card Grid.Row="3" Padding="16" Background="{DynamicResource SurfaceBrush}">
+                            <materialDesign:Card Grid.Row="3" 
+                                                 Padding="16" 
+                                                 Background="{StaticResource SurfaceBrush}"
+                                                 materialDesign:ElevationAssist.Elevation="Dp2">
                                 <StackPanel>
                                     <TextBlock Text="Quick Schedule" FontWeight="Medium" FontSize="16" Margin="0,0,0,16" />
                                     <DockPanel Margin="0,8,0,8">
