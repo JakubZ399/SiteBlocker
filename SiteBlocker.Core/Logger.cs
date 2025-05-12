@@ -1,23 +1,33 @@
-﻿namespace SiteBlocker.Core;
+﻿using System;
+using System.IO;
+
+namespace SiteBlocker.Core;
 
 public static class Logger
 {
-    private static string _logPath = Path.Combine(
+    private static readonly string _logPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "SiteBlocker", 
         "siteblocker.log");
         
     static Logger()
     {
-        // Upewnij się, że katalog istnieje
-        string directory = Path.GetDirectoryName(_logPath);
-        if (!Directory.Exists(directory))
+        try
         {
-            Directory.CreateDirectory(directory);
+            // Ensure directory exists
+            string? directory = Path.GetDirectoryName(_logPath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+            
+            // Clear log file at startup
+            File.WriteAllText(_logPath, $"=== SiteBlocker Log - {DateTime.Now} ===\r\n");
         }
-        
-        // Wyczyść plik logów przy starcie
-        File.WriteAllText(_logPath, $"=== SiteBlocker Log - {DateTime.Now} ===\r\n");
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to initialize logger: {ex.Message}");
+        }
     }
     
     public static void Log(string message)
@@ -26,15 +36,15 @@ public static class Logger
         {
             string logEntry = $"[{DateTime.Now:HH:mm:ss}] {message}\r\n";
             
-            // Zapisz do pliku
+            // Write to file
             File.AppendAllText(_logPath, logEntry);
             
-            // Wyświetl również w konsoli
+            // Also output to console
             Console.WriteLine(message);
         }
         catch
         {
-            // Ignoruj błędy logowania
+            // Ignore logging errors
         }
     }
 }

@@ -7,7 +7,7 @@ using SiteBlocker.Core;
 
 namespace SiteBlocker.UI
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, IDisposable
     {
         private readonly SiteBlocker.Core.SiteBlocker _blocker = new SiteBlocker.Core.SiteBlocker();
         private BlockerConfig _config;
@@ -224,6 +224,10 @@ namespace SiteBlocker.UI
                 return;
             }
             
+            _blocker.UseHostsFile = HostsFileCheckBox.IsChecked ?? true;
+            _blocker.UseFirewall = FirewallCheckBox.IsChecked ?? true;
+            _blocker.UseWfp = WfpCheckBox.IsChecked ?? false;
+            
             // Włącz blokowanie
             _config.EnableBlocking();
             SaveConfig();
@@ -287,6 +291,12 @@ namespace SiteBlocker.UI
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
+        
+        // Add this method at the end of the class
+        public void Dispose()
+        {
+            _blocker?.Dispose();
+        }
 
         protected override void OnClosed(EventArgs e)
         {
@@ -309,6 +319,10 @@ namespace SiteBlocker.UI
                     StopBlocking();
                 }
             }
+            
+            Dispose();
         }
+        
+        
     }
 }
